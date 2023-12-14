@@ -1,5 +1,6 @@
+import java.util.ArrayList;
 import java.util.Scanner;
-public class NewGame{
+public class Game{
     Scanner scan = new Scanner(System.in);
     private final int width = 10;
     private final int height = 10;
@@ -10,6 +11,9 @@ public class NewGame{
     private int leaderY = 4;
     private String copy = null;
 
+    private ArrayList<Demon> enemy = new ArrayList<Demon>();
+    private String copied;
+
     public int bounties = 0;
     public int supplies = 100;
     public int mercernaries = 100;
@@ -17,7 +21,7 @@ public class NewGame{
 
 
 
-    public NewGame() {
+    public Game() {
         System.out.println("Welcome to [NAME OF GAME]! Here, you'll be in charge of a company of demon hunters scouring the Chinese countryside for threats! Let's start off with a leader!");
         Leader[] choices = new Leader[3]; 
         for (int i = 0; i < 3; i++) {
@@ -121,6 +125,9 @@ public class NewGame{
             }
         }
 
+
+        enemyMove();
+
         printMap();
         printStats();
         
@@ -136,7 +143,7 @@ public class NewGame{
             System.out.print("You ran out of mercenaries! Game Over!");
             end = true;
         }
-        if (demons == 100) {
+        if (enemy.size() >= 5) {
             System.out.print("You let the demons overrun you! Game Over!");
             end = true;
         }
@@ -176,6 +183,7 @@ public class NewGame{
 
     public void treasures() {
         int poss = (int)(Math.random() * 8);
+        poss = 3;
         switch (poss) {
             case 0:
                 System.out.println("You've found extra rations! +25 to your supplies!");
@@ -193,8 +201,8 @@ public class NewGame{
                 }
                 break;
             case 3:
-                System.out.println("You've found a cursed charm! Demons can smell those from a mile away! +15 Demon activity!");
-                demons += 15;
+                System.out.println("You've found a cursed charm! Demons can smell those from a mile away! +20 Demon activity!");
+                demons += 20;
                 break;
             case 4:
                 System.out.println("You've found some medicinal herbs and ointments! These will come in handy... +10 HP!");
@@ -223,8 +231,71 @@ public class NewGame{
         }
     }
 
+    public void enemyMove() { 
+        
+        if (demons >= 20) {
+            Demon d = new Demon(width, height);
+
+            if (map[d.y()][d.x()] == null) {
+                map[d.y()][d.x()] = d.symbol();
+                enemy.add(d);
+                demons -= 20; 
+            }
+        }
+
+        ArrayList<Demon> dup = new ArrayList<Demon>(enemy);
+        for (Demon m : dup ) {
+            map[m.y()][m.x()] = m.copied();
+            int tempx = m.x();
+            int tempy = m.y();
+            m.movement(this);
+            // check that m.y() and m.x() is the same as player
+            // if the same, demon attacks player
+
+            if (m.x() == leaderX && m.y() == leaderY) {
+                leader.dmg(m.damage());
+                m.hurt();
+            }
+
+            if ( m.hp() <= 0 ) {
+                enemy.remove(m);
+            }
+            else {
+                if ( canMoveDemon(m.x(), m.y()) ) {
+                    m.setCopied(map[m.y()][m.x()]);
+                    map[m.y()][m.x()] = m.symbol();
+                }
+                else {
+                    // restore the demon
+                    m.setX(tempx);
+                    m.setY(tempy);
+                    map[m.y()][m.x()] = m.symbol();
+                }
+            }
+
+        }
+    }
+
+    public int getPX(){
+        return leaderX;
+    }
+
+    public int getPY(){
+        return leaderY;
+    }
+
+    public boolean canMoveDemon(int x, int y) {
+        if (x < 0 || x >= width || y < 0 || y >= height) {
+            return false;
+        }
+        if (map[y][x] != null && (map[y][x].equals("+") || map[y][x].equals("O"))) {
+            return false;
+        } 
+        return true;
+    }
+
     public static void main(String[] args) {
-        NewGame myGame = new NewGame();
+        Game myGame = new Game();
         while (!myGame.endCons()) {
             myGame.actionMenu();
         }
